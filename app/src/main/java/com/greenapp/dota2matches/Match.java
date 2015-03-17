@@ -39,4 +39,15 @@ public class Match {
 
     }
 
+    private String decodeTowerState(int d) {
+        StringBuilder sb = new StringBuilder();
+
+        int x = 1;
+        for (int i = 0; i < 32; i++) {
+            sb.append((d & x) == 0 ? "0" : "1");
+            x <<= 1;
+        }
+        return "" + sb.reverse();
+    }
+
 }

@@ -1,12 +1,17 @@
 package com.greenapp.dota2matches;
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
+import android.text.TextUtils;
 
 /**
  * Created by herroino on 16.03.2015.
@@ -25,6 +30,17 @@ public class MatchesProvider extends ContentProvider {
 
     MatchesDatabaseHelper dbHelper;
 
+    private static final int MATCHES = 1;
+    private static final int MATCH_ID = 2;
+
+    private static final UriMatcher uriMatcher;
+
+    static {
+        uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
+        uriMatcher.addURI("com.greenapp.matchesprovider", "matches", MATCHES);
+        uriMatcher.addURI("com.greenapp.matchesprovider", "matches/#", MATCH_ID);
+    }
+
     @Override
     public boolean onCreate() {
         Context context = getContext();
@@ -36,28 +52,110 @@ public class MatchesProvider extends ContentProvider {
 
     @Override
     public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs, String sortOrder) {
-        return null;
+        //открываем базу
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+        //создаем построитель запросов
+        SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+        //задаем таблицу
+        qb.setTables(MatchesDatabaseHelper.DATABASE_TABLE);
+        //определяем тип запроса
+        switch (uriMatcher.match(uri)
+                ) {   //если конкретная запись то
+            case MATCH_ID:
+                qb.appendWhere(KEY_ID + "=" + uri.getPathSegments().get(1));
+                break;
+            default:
+                break;
+        }
+        //определяем порядок сортировки
+        String orderBy;
+        if (TextUtils.isEmpty(sortOrder)) {
+            orderBy = KEY_MATCH_ID;//по дефолту id матча
+        } else {
+            orderBy = sortOrder;
+        }
+
+        Cursor c = qb.query(database, projection, selection, selectionArgs, null, null, orderBy);
+        //устанавливаем оповеститель для контекстрезольвера
+        c.setNotificationUri(getContext().getContentResolver(), uri);
+
+        return c;
     }
 
     @Override
     public String getType(Uri uri) {
-        return null;
+        switch (uriMatcher.match(uri)) {
+            case MATCHES:
+                return "vnd.android.cursor.dir/vnd.greenapp.dota2matches";
+            case MATCH_ID:
+                return "vnd.android.cursor.item/vnd.greenapp.dota2matches";
+            default:
+                throw new IllegalArgumentException("Unsupported URI: " + uri);
+        }
     }
 
     @Override
     public Uri insert(Uri uri, ContentValues values) {
-        return null;
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+
+        long rowID = database.insert(MatchesDatabaseHelper.DATABASE_TABLE, "match", values);
+
+        if (rowID > 0) {
+            Uri _uri = ContentUris.withAppendedId(CONTENT_URI, rowID);
+            getContext().getContentResolver().notifyChange(_uri, null);
+            return _uri;
+        }
+
+        throw new SQLException("Failed to insert row into " + uri);
+
     }
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
-        return 0;
+
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+
+        int cnt;
+        switch (uriMatcher.match(uri)) {
+            case MATCHES:
+                cnt = database.delete(MatchesDatabaseHelper.DATABASE_TABLE, selection, selectionArgs);
+                break;
+            case MATCH_ID:
+                String segment = uri.getPathSegments().get(1);
+                cnt = database.delete(MatchesDatabaseHelper.DATABASE_TABLE, KEY_ID + "=" + segment +
+                        (!TextUtils.isEmpty(selection) ? " AND ("
+                                + selection + ')' : ""), selectionArgs);
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported URI: " + uri);
+        }
+        getContext().getContentResolver().notifyChange(uri, null);
+        return cnt;
     }
 
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
-        return 0;
+        SQLiteDatabase database = dbHelper.getWritableDatabase();
+        int cnt;
+        switch (uriMatcher.match(uri)) {
+            case MATCHES:
+                cnt = database.update(MatchesDatabaseHelper.DATABASE_TABLE, values, selection, selectionArgs);
+                break;
+            case MATCH_ID:
+
+                String segment = uri.getPathSegments().get(1);
+                cnt = database.update(MatchesDatabaseHelper.DATABASE_TABLE, values, KEY_ID + "=" + segment +
+                        (!TextUtils.isEmpty(selection) ? " AND ("
+                                + selection + ')' : ""), selectionArgs);
+                break;
+            default:
+                throw new IllegalArgumentException("Unlnown URI: " + uri);
+        }
+        getContext().getContentResolver().notifyChange(uri, null);
+
+        return cnt;
     }
+
 
     private static class MatchesDatabaseHelper extends SQLiteOpenHelper {
 
