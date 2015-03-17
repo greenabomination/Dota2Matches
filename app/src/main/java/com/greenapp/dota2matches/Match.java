@@ -9,6 +9,7 @@ public class Match {
     private String team1;
     private String team2;
     private int league_id;
+    private String summury;
 
 
     // конструктор
@@ -30,7 +31,29 @@ public class Match {
         }
         match_id = _match_id;
         league_id = _league_id;
+        summury = match_id + ": " + team1 + " vs " + team2 + " (league:" + league_id + ")";
     }
+
+    public String getTeam1() {
+        return team1;
+    }
+
+    public String getTeam2() {
+        return team2;
+    }
+
+    public int getMatch_id() {
+        return match_id;
+    }
+
+    public int getLeague_id() {
+        return league_id;
+    }
+
+    public String getSummury() {
+        return summury;
+    }
+
 
     //метод возвращает суммарно данные по матчу
     public String toString() {

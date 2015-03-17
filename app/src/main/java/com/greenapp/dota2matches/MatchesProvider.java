@@ -27,6 +27,7 @@ public class MatchesProvider extends ContentProvider {
     public static final String KEY_TEAM1 = "team1";
     public static final String KEY_TEAM2 = "team2";
     public static final String KEY_LEAGUE_ID = "league_id";
+    public static final String KEY_SUMMURY = "summary";
 
     MatchesDatabaseHelper dbHelper;
 
@@ -170,6 +171,7 @@ public class MatchesProvider extends ContentProvider {
                 + KEY_MATCH_ID + " INTEGER, "
                 + KEY_TEAM1 + " TEXT, "
                 + KEY_TEAM2 + " TEXT, "
+                + KEY_SUMMURY + " TEXT, "
                 + KEY_LEAGUE_ID + " INTEGER);";
 
         private SQLiteDatabase matchesDB;

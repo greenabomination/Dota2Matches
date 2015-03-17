@@ -1,12 +1,15 @@
 package com.greenapp.dota2matches;
 
 import android.app.ListFragment;
+import android.content.ContentResolver;
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.JsonReader;
 import android.util.JsonToken;
 import android.util.Log;
-import android.widget.ArrayAdapter;
+import android.widget.SimpleCursorAdapter;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,19 +31,19 @@ public class MatchesListFragment extends ListFragment {
 
     private Handler handler = new Handler();
     //адаптер для списка
-    ArrayAdapter<Match> aa;
+//    ArrayAdapter<Match> aa;
 
-    ArrayList<Match> matches = new ArrayList<Match>();
+    //ArrayList<Match> matches = new ArrayList<Match>();
+//теперь это не аррейадаптер а симплекурсорадаптер
+    SimpleCursorAdapter adapter;
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        //выбираем стайл для списка из стандартных лэйаутов
-        int layout_id = android.R.layout.simple_list_item_1;
-        //создаем аррейадаптер
-        aa = new ArrayAdapter<Match>(getActivity(), layout_id, matches);
+        adapter = new SimpleCursorAdapter(getActivity(), android.R.layout.simple_list_item_1, null,
+                new String[]{MatchesProvider.KEY_SUMMURY}, new int[]{android.R.id.text1}, 0);
         //назначаем списку адаптер
-        setListAdapter(aa);
+        setListAdapter(adapter);
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
@@ -189,8 +192,25 @@ public class MatchesListFragment extends ListFragment {
     }
 
     private void addNewMatch(Match m) {
-        matches.add(m);
-        aa.notifyDataSetChanged();
+   /* 1st version
+     matches.add(m);
+        aa.notifyDataSetChanged();*/
+        ContentResolver cr = getActivity().getContentResolver();
+        //описываем условие where
+        String w = MatchesProvider.KEY_MATCH_ID + "=" + m.getMatch_id();
+        //выполняем запрос
+        Cursor query = cr.query(MatchesProvider.CONTENT_URI, null, w, null, null);
+
+        if (query.getCount() == 0) {
+            ContentValues cv = new ContentValues();
+            cv.put(MatchesProvider.KEY_MATCH_ID, m.getMatch_id());
+            cv.put(MatchesProvider.KEY_TEAM1, m.getTeam1());
+            cv.put(MatchesProvider.KEY_TEAM2, m.getTeam2());
+            cv.put(MatchesProvider.KEY_LEAGUE_ID, m.getLeague_id());
+            cr.insert(MatchesProvider.CONTENT_URI, cv);
+        }
+        query.close();
+
     }
 
 }
