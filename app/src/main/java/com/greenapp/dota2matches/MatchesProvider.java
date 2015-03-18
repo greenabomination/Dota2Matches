@@ -12,12 +12,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 /**
  * Created by herroino on 16.03.2015.
  * класс с базой данных и источником оных
  */
 public class MatchesProvider extends ContentProvider {
+
+    private static final String TAG = "DOTA2";
     //ури строка для внешних обращений к классу
     public static final Uri CONTENT_URI = Uri.parse("content://com.greenapp.dota2matches/matches");
 
@@ -38,8 +41,8 @@ public class MatchesProvider extends ContentProvider {
 
     static {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
-        uriMatcher.addURI("com.greenapp.matchesprovider", "matches", MATCHES);
-        uriMatcher.addURI("com.greenapp.matchesprovider", "matches/#", MATCH_ID);
+        uriMatcher.addURI("com.greenapp.dota2matches", "matches", MATCHES);
+        uriMatcher.addURI("com.greenapp.dota2matches", "matches/#", MATCH_ID);
     }
 
     @Override
@@ -98,7 +101,7 @@ public class MatchesProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
-
+        Log.d(TAG,"insert");
         long rowID = database.insert(MatchesDatabaseHelper.DATABASE_TABLE, "match", values);
 
         if (rowID > 0) {

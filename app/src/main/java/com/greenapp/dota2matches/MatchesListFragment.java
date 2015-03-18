@@ -1,8 +1,11 @@
 package com.greenapp.dota2matches;
 
 import android.app.ListFragment;
+import android.app.LoaderManager;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Handler;
@@ -26,7 +29,7 @@ import java.util.List;
  * Created by herroino on 14.03.2015.
  * класс описывающий фрагмент со списком
  */
-public class MatchesListFragment extends ListFragment {
+public class MatchesListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = "DOTA2";
 
     private Handler handler = new Handler();
@@ -44,9 +47,13 @@ public class MatchesListFragment extends ListFragment {
                 new String[]{MatchesProvider.KEY_SUMMURY}, new int[]{android.R.id.text1}, 0);
         //назначаем списку адаптер
         setListAdapter(adapter);
+        Log.d(TAG, "pre-getLOader");
+        getLoaderManager().initLoader(0, null, this);
+
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+                Log.d(TAG, "pre_refresh");
                 refreshMatches();
             }
         });
@@ -54,6 +61,12 @@ public class MatchesListFragment extends ListFragment {
     }
 
     public void refreshMatches() {
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                getLoaderManager().restartLoader(0, null, MatchesListFragment.this);
+            }
+        });
         URL url;
         try {
             String matchFeed = getString(R.string.live_matches_url);
@@ -161,7 +174,7 @@ public class MatchesListFragment extends ListFragment {
                 r.skipValue();
             }
         }
-        Log.d(TAG, "player: " + player_name + " (" + account_id + ") hero - " + hero_id + "; team - " + team);
+        //    Log.d(TAG, "player: " + player_name + " (" + account_id + ") hero - " + hero_id + "; team - " + team);
         r.endObject();
     }
 
@@ -192,6 +205,7 @@ public class MatchesListFragment extends ListFragment {
     }
 
     private void addNewMatch(Match m) {
+        Log.d(TAG, "addNewMatch");
    /* 1st version
      matches.add(m);
         aa.notifyDataSetChanged();*/
@@ -200,17 +214,40 @@ public class MatchesListFragment extends ListFragment {
         String w = MatchesProvider.KEY_MATCH_ID + "=" + m.getMatch_id();
         //выполняем запрос
         Cursor query = cr.query(MatchesProvider.CONTENT_URI, null, w, null, null);
-
+        Log.d(TAG, query + "");
         if (query.getCount() == 0) {
             ContentValues cv = new ContentValues();
             cv.put(MatchesProvider.KEY_MATCH_ID, m.getMatch_id());
             cv.put(MatchesProvider.KEY_TEAM1, m.getTeam1());
             cv.put(MatchesProvider.KEY_TEAM2, m.getTeam2());
             cv.put(MatchesProvider.KEY_LEAGUE_ID, m.getLeague_id());
+            cv.put(MatchesProvider.KEY_SUMMURY, m.getSummury());
             cr.insert(MatchesProvider.CONTENT_URI, cv);
         }
         query.close();
 
     }
 
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        Log.d(TAG, "onCreateLoader");
+        String[] projection = new String[]
+                {
+                        MatchesProvider.KEY_ID,
+                        MatchesProvider.KEY_SUMMURY};
+        Dota2MatchesActivity dota2MatchesActivity = (Dota2MatchesActivity) getActivity();
+        CursorLoader loader = new CursorLoader(getActivity(),
+                MatchesProvider.CONTENT_URI, projection, null, null, null);
+        return loader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        adapter.swapCursor(data);
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        adapter.swapCursor(null);
+    }
 }
