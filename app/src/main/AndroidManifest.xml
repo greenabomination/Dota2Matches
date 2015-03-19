@@ -7,6 +7,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme">
+        <meta-data
+            android:name="android.app.default_searchable"
+            android:value=".MatchesSearchResult" />
+
         <activity
             android:name=".Dota2MatchesActivity"
             android:label="@string/app_name">
@@ -16,10 +20,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <provider
-            android:authorities="com.greenapp. "
-            android:name=".MatchesProvider" />
-    </application>
+        <activity
+            android:name=".MatchesSearchResult"
+            android:label="Dota2MatchesSearch"
+            android:launchMode="standard">
+            <intent-filter>
+                <action android:name="android.intent.action.SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <meta-data
+                android:name="android.app.searchable"
+                android:resource="@xml/searchable" />
+        </activity>
+<provider
+    android:authorities="com.greenapp.dota2matches"
+    android:name=".MatchesProvider"/>
+   </application>
     <uses-permission android:name="android.permission.INTERNET" />
 
 </manifest>
