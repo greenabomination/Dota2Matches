@@ -5,4 +5,5 @@
     <string name="action_settings">Settings</string>
     <string name="live_matches_url">http://api.steampowered.com/IDOTA2Match_570/GetLiveLeagueGames/v1?key=C814C0ECA47E8B71065AD47A9B603BAD
     </string>
+    <string name="search_description">Search team</string>
 </resources>

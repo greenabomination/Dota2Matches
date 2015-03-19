@@ -1,5 +1,6 @@
 package com.greenapp.dota2matches;
 
+import android.app.SearchManager;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -13,6 +14,8 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
+
+import java.util.HashMap;
 
 /**
  * Created by herroino on 16.03.2015.
@@ -36,6 +39,7 @@ public class MatchesProvider extends ContentProvider {
 
     private static final int MATCHES = 1;
     private static final int MATCH_ID = 2;
+    private static final int SEARCH = 3;
 
     private static final UriMatcher uriMatcher;
 
@@ -43,6 +47,23 @@ public class MatchesProvider extends ContentProvider {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         uriMatcher.addURI("com.greenapp.dota2matches", "matches", MATCHES);
         uriMatcher.addURI("com.greenapp.dota2matches", "matches/#", MATCH_ID);
+        uriMatcher.addURI("com.greenapp.dota2matches",
+                SearchManager.SUGGEST_URI_PATH_QUERY, SEARCH);
+        uriMatcher.addURI("com.greenapp.dota2matches",
+                SearchManager.SUGGEST_URI_PATH_QUERY + "/*", SEARCH);
+        uriMatcher.addURI("com.greenapp.dota2matches",
+                SearchManager.SUGGEST_URI_PATH_SHORTCUT, SEARCH);
+        uriMatcher.addURI("com.greenapp.dota2matches",
+                SearchManager.SUGGEST_URI_PATH_SHORTCUT + "/*", SEARCH);
+    }
+
+    private static final HashMap<String, String> SEARCH_PROJECTION_MAP;
+
+    static {
+        SEARCH_PROJECTION_MAP = new HashMap<String, String>();
+        SEARCH_PROJECTION_MAP.put(SearchManager.SUGGEST_COLUMN_TEXT_1,
+                KEY_SUMMURY + " AS " + SearchManager.SUGGEST_COLUMN_TEXT_1);
+        SEARCH_PROJECTION_MAP.put("_id", KEY_ID + " AS " + "_id");
     }
 
     @Override
@@ -67,6 +88,10 @@ public class MatchesProvider extends ContentProvider {
                 ) {   //если конкретная запись то
             case MATCH_ID:
                 qb.appendWhere(KEY_ID + "=" + uri.getPathSegments().get(1));
+                break;
+            case SEARCH:
+                qb.appendWhere(KEY_SUMMURY + " LIKE \"%" + uri.getPathSegments().get(1) + "%\"");
+                qb.setProjectionMap(SEARCH_PROJECTION_MAP);
                 break;
             default:
                 break;
@@ -93,6 +118,8 @@ public class MatchesProvider extends ContentProvider {
                 return "vnd.android.cursor.dir/vnd.greenapp.dota2matches";
             case MATCH_ID:
                 return "vnd.android.cursor.item/vnd.greenapp.dota2matches";
+            case SEARCH:
+                return SearchManager.SUGGEST_MIME_TYPE;
             default:
                 throw new IllegalArgumentException("Unsupported URI: " + uri);
         }
@@ -101,7 +128,7 @@ public class MatchesProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         SQLiteDatabase database = dbHelper.getWritableDatabase();
-        Log.d(TAG,"insert");
+        Log.d(TAG, "insert");
         long rowID = database.insert(MatchesDatabaseHelper.DATABASE_TABLE, "match", values);
 
         if (rowID > 0) {
