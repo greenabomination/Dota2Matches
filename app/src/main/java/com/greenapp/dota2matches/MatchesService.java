@@ -117,6 +117,9 @@ public class MatchesService extends IntentService {
             //проверяем ответ на предмет ОК
             if (responceCode == HttpURLConnection.HTTP_OK) {
                 InputStream inputStream = connection.getInputStream();
+                //удаляем старые строки
+                ContentResolver cr = getContentResolver();
+                cr.delete(MatchesProvider.CONTENT_URI,null,null);
                 //так как это джисон, то с этого момента все будет не как парсинг сайта
                 JsonReader reader = new JsonReader(new InputStreamReader(inputStream, "UTF-8"));
                 //и тут начинается истинная магия
